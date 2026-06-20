@@ -1,0 +1,103 @@
+@extends('admin.layouts.app')
+
+@section('header_title', 'Edit Menu Kafe')
+
+@section('content')
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card card-custom p-4">
+            <h5 class="mb-4 font-weight-600">Form Edit Menu</h5>
+            
+            <form action="{{ route('admin.menu.update', $menu->id) }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                @method('PUT')
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="nama_menu" class="form-label font-weight-500">Nama Menu</label>
+                            <input type="text" class="form-control @error('nama_menu') is-invalid @enderror" id="nama_menu" name="nama_menu" value="{{ old('nama_menu', $menu->nama_menu) }}" required>
+                            @error('nama_menu')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="kategori_id" class="form-label font-weight-500">Kategori Menu</label>
+                            <select class="form-select @error('kategori_id') is-invalid @enderror" id="kategori_id" name="kategori_id" required>
+                                @foreach($kategori as $kat)
+                                    <option value="{{ $kat->id }}" {{ old('kategori_id', $menu->kategori_id) == $kat->id ? 'selected' : '' }}>{{ $kat->nama_kategori }}</option>
+                                @endforeach
+                            </select>
+                            @error('kategori_id')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="harga" class="form-label font-weight-500">Harga (Rp)</label>
+                            <input type="number" class="form-control @error('harga') is-invalid @enderror" id="harga" name="harga" value="{{ old('harga', intval($menu->harga)) }}" min="0" required>
+                            @error('harga')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="status" class="form-label font-weight-500">Status Ketersediaan</label>
+                            <select class="form-select @error('status') is-invalid @enderror" id="status" name="status" required>
+                                <option value="tersedia" {{ old('status', $menu->status) == 'tersedia' ? 'selected' : '' }}>Tersedia</option>
+                                <option value="habis" {{ old('status', $menu->status) == 'habis' ? 'selected' : '' }}>Habis</option>
+                            </select>
+                            @error('status')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
+
+                    <div class="col-12">
+                        <div class="mb-3">
+                            <label for="deskripsi" class="form-label font-weight-500">Deskripsi Menu</label>
+                            <textarea class="form-control @error('deskripsi') is-invalid @enderror" id="deskripsi" name="deskripsi" rows="3">{{ old('deskripsi', $menu->deskripsi) }}</textarea>
+                            @error('deskripsi')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
+
+                    <div class="col-12">
+                        <div class="mb-4">
+                            <label for="foto" class="form-label font-weight-500">Foto Menu</label>
+                            @if($menu->foto)
+                                <div class="mb-2">
+                                    <img src="{{ asset($menu->foto) }}" alt="{{ $menu->nama_menu }}" class="img-thumbnail preview-image">
+                                    <div class="form-text text-muted">Gambar saat ini. Unggah foto baru di bawah jika ingin mengganti.</div>
+                                </div>
+                            @endif
+                            <input type="file" class="form-control @error('foto') is-invalid @enderror" id="foto" name="foto" accept="image/*">
+                            <div class="form-text">Maksimal resolusi file gambar adalah 2MB.</div>
+                            @error('foto')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2">
+                    <a href="{{ route('admin.menu.index') }}" class="btn btn-light btn-custom">
+                        Kembali
+                    </a>
+                    <button type="submit" class="btn btn-primary btn-custom">
+                        <i class="bi bi-save me-1"></i> Perbarui Menu
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endsection

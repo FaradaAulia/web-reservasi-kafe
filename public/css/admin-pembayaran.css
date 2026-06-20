@@ -1,0 +1,13 @@
+.receipt-modal-body {
+    min-height: 450px;
+    max-height: 450px;
+}
+
+.receipt-image {
+    max-height: 450px;
+    width: auto;
+}
+
+.list-square {
+    list-style-type: square;
+}
