@@ -3,128 +3,95 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Menu;
+use App\Http\Requests\Admin\MenuRequest;
 use App\Models\KategoriMenu;
-use Illuminate\Http\Request;
+use App\Models\Menu;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
 
 class MenuController extends Controller
 {
     public function index()
     {
         $menus = Menu::with('kategori')->latest()->get();
+
         return view('admin.menu.index', compact('menus'));
     }
 
     public function create()
     {
-        $kategori = KategoriMenu::all();
+        $kategori = KategoriMenu::orderBy('nama_kategori')->get();
+
         return view('admin.menu.create', compact('kategori'));
     }
 
-    public function store(Request $request)
+    public function store(MenuRequest $request)
     {
-        $request->validate([
-            'kategori_id' => 'required|exists:kategori_menu,id',
-            'nama_menu' => 'required|string|max:255',
-            'deskripsi' => 'nullable|string',
-            'harga' => 'required|numeric|min:0',
-            'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
-            'status' => 'required|in:tersedia,habis',
-        ]);
+        $data = $request->validated();
+        $data['foto'] = $this->storePhoto($request);
 
-        $fotoPath = null;
-        if ($request->hasFile('foto')) {
-            $file = $request->file('foto');
-            $fotoName = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-            
-            // Create directory if not exists
-            if (!File::isDirectory(public_path('menus'))) {
-                File::makeDirectory(public_path('menus'), 0777, true, true);
-            }
-            
-            $file->move(public_path('menus'), $fotoName);
-            $fotoPath = 'menus/' . $fotoName;
-        }
-
-        Menu::create([
-            'kategori_id' => $request->kategori_id,
-            'nama_menu' => $request->nama_menu,
-            'deskripsi' => $request->deskripsi,
-            'harga' => $request->harga,
-            'foto' => $fotoPath,
-            'status' => $request->status,
-        ]);
+        Menu::create($data);
 
         return redirect()->route('admin.menu.index')->with('success', 'Menu berhasil ditambahkan!');
     }
 
-    public function show(string $id)
+    public function show(Menu $menu)
     {
         return redirect()->route('admin.menu.index');
     }
 
-    public function edit(string $id)
+    public function edit(Menu $menu)
     {
-        $menu = Menu::findOrFail($id);
-        $kategori = KategoriMenu::all();
+        $kategori = KategoriMenu::orderBy('nama_kategori')->get();
+
         return view('admin.menu.edit', compact('menu', 'kategori'));
     }
 
-    public function update(Request $request, string $id)
+    public function update(MenuRequest $request, Menu $menu)
     {
-        $menu = Menu::findOrFail($id);
+        $data = $request->validated();
 
-        $request->validate([
-            'kategori_id' => 'required|exists:kategori_menu,id',
-            'nama_menu' => 'required|string|max:255',
-            'deskripsi' => 'nullable|string',
-            'harga' => 'required|numeric|min:0',
-            'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
-            'status' => 'required|in:tersedia,habis',
-        ]);
-
-        $fotoPath = $menu->foto;
         if ($request->hasFile('foto')) {
-            // Delete old file if exists
-            if ($menu->foto && File::exists(public_path($menu->foto))) {
-                File::delete(public_path($menu->foto));
-            }
-
-            $file = $request->file('foto');
-            $fotoName = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-            
-            if (!File::isDirectory(public_path('menus'))) {
-                File::makeDirectory(public_path('menus'), 0777, true, true);
-            }
-            
-            $file->move(public_path('menus'), $fotoName);
-            $fotoPath = 'menus/' . $fotoName;
+            $this->deletePhoto($menu->foto);
+            $data['foto'] = $this->storePhoto($request);
+        } else {
+            unset($data['foto']);
         }
 
-        $menu->update([
-            'kategori_id' => $request->kategori_id,
-            'nama_menu' => $request->nama_menu,
-            'deskripsi' => $request->deskripsi,
-            'harga' => $request->harga,
-            'foto' => $fotoPath,
-            'status' => $request->status,
-        ]);
+        $menu->update($data);
 
         return redirect()->route('admin.menu.index')->with('success', 'Menu berhasil diperbarui!');
     }
 
-    public function destroy(string $id)
+    public function destroy(Menu $menu)
     {
-        $menu = Menu::findOrFail($id);
-
-        // Delete photo file if exists
-        if ($menu->foto && File::exists(public_path($menu->foto))) {
-            File::delete(public_path($menu->foto));
-        }
-
+        $this->deletePhoto($menu->foto);
         $menu->delete();
 
         return redirect()->route('admin.menu.index')->with('success', 'Menu berhasil dihapus!');
+    }
+
+    private function storePhoto(MenuRequest $request): ?string
+    {
+        if (! $request->hasFile('foto')) {
+            return null;
+        }
+
+        if (! File::isDirectory(public_path('menus'))) {
+            File::makeDirectory(public_path('menus'), 0755, true);
+        }
+
+        $file = $request->file('foto');
+        $fileName = Str::uuid().'.'.$file->extension();
+        $file->move(public_path('menus'), $fileName);
+
+        return 'menus/'.$fileName;
+    }
+
+    private function deletePhoto(?string $path): void
+    {
+        if ($path && str_starts_with($path, 'menus/') && File::exists(public_path($path))) {
+            File::delete(public_path($path));
+        }
     }
 }

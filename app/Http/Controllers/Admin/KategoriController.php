@@ -3,14 +3,15 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\KategoriRequest;
 use App\Models\KategoriMenu;
-use Illuminate\Http\Request;
 
 class KategoriController extends Controller
 {
     public function index()
     {
-        $kategori = KategoriMenu::all();
+        $kategori = KategoriMenu::orderBy('nama_kategori')->get();
+
         return view('admin.kategori.index', compact('kategori'));
     }
 
@@ -19,52 +20,35 @@ class KategoriController extends Controller
         return redirect()->route('admin.kategori.index');
     }
 
-    public function store(Request $request)
+    public function store(KategoriRequest $request)
     {
-        $request->validate([
-            'nama_kategori' => 'required|string|max:255',
-            'deskripsi' => 'nullable|string',
-        ]);
-
-        KategoriMenu::create([
-            'nama_kategori' => $request->nama_kategori,
-            'deskripsi' => $request->deskripsi,
-        ]);
+        KategoriMenu::create($request->validated());
 
         return redirect()->route('admin.kategori.index')->with('success', 'Kategori berhasil ditambahkan!');
     }
 
-    public function show(string $id)
+    public function show(KategoriMenu $kategori)
     {
         return redirect()->route('admin.kategori.index');
     }
 
-    public function edit(string $id)
+    public function edit(KategoriMenu $kategori)
     {
-        $kategoriToEdit = KategoriMenu::findOrFail($id);
-        $kategori = KategoriMenu::all();
+        $kategoriToEdit = $kategori;
+        $kategori = KategoriMenu::orderBy('nama_kategori')->get();
+
         return view('admin.kategori.index', compact('kategori', 'kategoriToEdit'));
     }
 
-    public function update(Request $request, string $id)
+    public function update(KategoriRequest $request, KategoriMenu $kategori)
     {
-        $request->validate([
-            'nama_kategori' => 'required|string|max:255',
-            'deskripsi' => 'nullable|string',
-        ]);
-
-        $kategori = KategoriMenu::findOrFail($id);
-        $kategori->update([
-            'nama_kategori' => $request->nama_kategori,
-            'deskripsi' => $request->deskripsi,
-        ]);
+        $kategori->update($request->validated());
 
         return redirect()->route('admin.kategori.index')->with('success', 'Kategori berhasil diperbarui!');
     }
 
-    public function destroy(string $id)
+    public function destroy(KategoriMenu $kategori)
     {
-        $kategori = KategoriMenu::findOrFail($id);
         $kategori->delete();
 
         return redirect()->route('admin.kategori.index')->with('success', 'Kategori berhasil dihapus!');

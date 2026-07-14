@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Pembayaran;
 use App\Models\Reservasi;
-use App\Models\Meja;
+use Illuminate\Support\Facades\DB;
 
 class PembayaranController extends Controller
 {
@@ -26,60 +26,68 @@ class PembayaranController extends Controller
 
     public function verifikasi($id)
     {
-        $pembayaran = Pembayaran::findOrFail($id);
+        DB::transaction(function () use ($id) {
+            $pembayaran = Pembayaran::with('reservasi.meja')
+                ->lockForUpdate()
+                ->findOrFail($id);
 
-        $pembayaran->update([
-            'status' => 'berhasil',
-            'tanggal_bayar' => now()
-        ]);
+            $pembayaran->update([
+                'status' => 'berhasil',
+                'tanggal_bayar' => now(),
+            ]);
 
-        $pembayaran->reservasi->update([
-            'status' => 'dibayar'
-        ]);
+            $pembayaran->reservasi->update([
+                'status' => 'dibayar',
+            ]);
 
-        // Mark table status as booked
-        $pembayaran->reservasi->meja->update([
-            'status' => 'dipesan'
-        ]);
+            $pembayaran->reservasi->meja->update([
+                'status' => 'dipesan',
+            ]);
+        });
 
         return back()->with('success', 'Pembayaran berhasil diverifikasi dan reservasi telah DIBAYAR!');
     }
 
     public function selesai($id)
     {
-        $reservasi = Reservasi::findOrFail($id);
+        DB::transaction(function () use ($id) {
+            $reservasi = Reservasi::with('meja')
+                ->lockForUpdate()
+                ->findOrFail($id);
 
-        $reservasi->update([
-            'status' => 'selesai'
-        ]);
+            $reservasi->update([
+                'status' => 'selesai',
+            ]);
 
-        // Release the table status to tersedia
-        $reservasi->meja->update([
-            'status' => 'tersedia'
-        ]);
+            $reservasi->meja->update([
+                'status' => 'tersedia',
+            ]);
+        });
 
         return back()->with('success', 'Reservasi ditandai SELESAI!');
     }
 
     public function batal($id)
     {
-        $reservasi = Reservasi::findOrFail($id);
+        DB::transaction(function () use ($id) {
+            $reservasi = Reservasi::with(['meja', 'pembayaran'])
+                ->lockForUpdate()
+                ->findOrFail($id);
 
-        $reservasi->update([
-            'status' => 'dibatalkan'
-        ]);
-
-        // Update payment if exists to gagal
-        if ($reservasi->pembayaran) {
-            $reservasi->pembayaran->update([
-                'status' => 'gagal'
+            $reservasi->update([
+                'status' => 'dibatalkan',
             ]);
-        }
 
-        // Release the table status to tersedia
-        $reservasi->meja->update([
-            'status' => 'tersedia'
-        ]);
+            if ($reservasi->pembayaran) {
+                $reservasi->pembayaran->update([
+                    'status' => 'gagal',
+                ]);
+            }
+
+            $reservasi->meja->update([
+                'status' => 'tersedia',
+            ]);
+        });
 
         return back()->with('success', 'Reservasi berhasil DIBATALKAN!');
     }

@@ -17,33 +17,35 @@
     <!-- Tailwind CSS (Vite) -->
     @vite(['resources/css/app.css', 'resources/css/customer-custom.css', 'resources/js/app.js'])
 </head>
-<body class="h-full text-stone-200 font-sans flex flex-col justify-between selection:bg-amber-600 selection:text-white">
+<body class="min-h-full bg-stone-950 text-stone-200 font-sans selection:bg-amber-600 selection:text-white">
 
     <!-- Navbar -->
-    <nav class="bg-stone-900/80 backdrop-blur-md border-b border-stone-800 sticky top-0 z-50">
+    <nav class="sticky top-0 z-50 border-b border-stone-800 bg-stone-950/90 backdrop-blur-md">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-20">
+            <div class="flex min-h-20 items-center justify-between gap-4 py-3">
                 
                 <!-- Logo -->
-                <div class="flex items-center gap-3">
-                    <a href="{{ route('customer.home') }}" class="flex items-center gap-2 text-amber-500 font-bold text-xl tracking-wider hover:opacity-90">
-                        <i class="bi bi-cup-hot-fill text-2xl text-amber-500"></i>
-                        <span>AROMA KAFE</span>
+                <div class="flex min-w-0 items-center gap-3">
+                    <a href="{{ route('customer.home') }}" class="flex min-w-0 items-center gap-3 text-amber-500 font-bold tracking-wider hover:opacity-90">
+                        <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-amber-500/25 bg-amber-500/10">
+                            <i class="bi bi-cup-hot-fill text-xl text-amber-400"></i>
+                        </span>
+                        <span class="truncate text-lg sm:text-xl">AROMA KAFE</span>
                     </a>
                 </div>
 
                 <!-- Nav links -->
-                <div class="hidden md:flex items-center gap-8">
-                    <a href="{{ route('customer.home') }}" class="text-stone-300 hover:text-amber-500 font-medium transition {{ request()->routeIs('customer.home') ? 'text-amber-500 border-b-2 border-amber-500 pb-1' : '' }}">
-                        <i class="bi bi-calendar-check mr-1"></i> Reservasi Saya
+                <div class="hidden items-center rounded-2xl border border-stone-800 bg-stone-900/80 p-1 md:flex">
+                    <a href="{{ route('customer.home') }}" class="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition {{ request()->routeIs('customer.home') ? 'bg-amber-500 text-stone-950 shadow-sm shadow-amber-950/30' : 'text-stone-300 hover:bg-stone-800 hover:text-amber-300' }}">
+                        <i class="bi bi-calendar-check"></i> Reservasi Saya
                     </a>
-                    <a href="{{ route('customer.reservasi.index') }}" class="text-stone-300 hover:text-amber-500 font-medium transition {{ request()->routeIs('customer.reservasi.*') ? 'text-amber-500 border-b-2 border-amber-500 pb-1' : '' }}">
-                        <i class="bi bi-plus-circle mr-1"></i> Buat Reservasi
+                    <a href="{{ route('customer.reservasi.index') }}" class="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition {{ request()->routeIs('customer.reservasi.*') ? 'bg-amber-500 text-stone-950 shadow-sm shadow-amber-950/30' : 'text-stone-300 hover:bg-stone-800 hover:text-amber-300' }}">
+                        <i class="bi bi-plus-circle"></i> Buat Reservasi
                     </a>
                 </div>
 
                 <!-- Actions -->
-                <div class="flex items-center gap-4">
+                <div class="flex shrink-0 items-center gap-3">
                     <div class="text-right hidden sm:block">
                         <p class="text-xs text-stone-400">Selamat datang,</p>
                         <p class="text-sm font-semibold text-stone-200">{{ Auth::user()->name }}</p>
@@ -51,7 +53,7 @@
                     
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
-                        <button type="submit" class="bg-stone-800 hover:bg-stone-700 text-stone-300 hover:text-red-400 p-2.5 rounded-xl border border-stone-700 transition flex items-center justify-center gap-2 text-sm">
+                        <button type="submit" class="flex items-center justify-center gap-2 rounded-2xl border border-stone-700 bg-stone-900 px-3 py-2.5 text-sm text-stone-300 transition hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-300">
                             <i class="bi bi-box-arrow-right text-base"></i>
                             <span class="hidden md:inline">Keluar</span>
                         </button>
@@ -59,11 +61,20 @@
                 </div>
 
             </div>
+
+            <div class="grid grid-cols-2 gap-2 pb-3 md:hidden">
+                <a href="{{ route('customer.home') }}" class="inline-flex items-center justify-center gap-2 rounded-2xl border px-3 py-2.5 text-sm font-semibold transition {{ request()->routeIs('customer.home') ? 'border-amber-500 bg-amber-500 text-stone-950' : 'border-stone-800 bg-stone-900 text-stone-300' }}">
+                    <i class="bi bi-calendar-check"></i> Reservasi
+                </a>
+                <a href="{{ route('customer.reservasi.index') }}" class="inline-flex items-center justify-center gap-2 rounded-2xl border px-3 py-2.5 text-sm font-semibold transition {{ request()->routeIs('customer.reservasi.*') ? 'border-amber-500 bg-amber-500 text-stone-950' : 'border-stone-800 bg-stone-900 text-stone-300' }}">
+                    <i class="bi bi-plus-circle"></i> Buat
+                </a>
+            </div>
         </div>
     </nav>
 
     <!-- Main Content Area -->
-    <main class="flex-grow py-8 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8">
+    <main class="min-h-[calc(100vh-12rem)] py-8 sm:py-10 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Session Alerts -->
         @if(session('success'))
             <div class="mb-6 bg-emerald-950/50 border border-emerald-500/30 text-emerald-300 p-4 rounded-2xl flex items-start gap-3 shadow-lg">
@@ -89,7 +100,7 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-stone-900 border-t border-stone-850 py-8 text-center text-xs text-stone-500">
+    <footer class="border-t border-stone-800 bg-stone-950 py-8 text-center text-xs text-stone-500">
         <div class="max-w-7xl mx-auto px-4">
             <p>&copy; {{ date('Y') }} Aroma Kafe. Semua hak cipta dilindungi.</p>
             <p class="mt-2 text-stone-600">Terima kasih telah mempercayakan reservasi meja Anda bersama kami.</p>

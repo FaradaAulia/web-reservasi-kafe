@@ -3,71 +3,76 @@
 namespace App\Http\Controllers\Customer;
 
 use App\Http\Controllers\Controller;
-use App\Models\Reservasi;
+use App\Http\Requests\PayReservationRequest;
 use App\Models\Pembayaran;
-use Illuminate\Http\Request;
+use App\Models\Reservasi;
+use Illuminate\Support\Facades\DB;
 
 class CheckoutController extends Controller
 {
-    public function index($id)
+    public function index(int $id)
     {
-        $reservasi = Reservasi::with([
-            'pesanan.detailPesanan.menu'
-        ])->findOrFail($id);
+        $reservasi = $this->findVisibleReservation($id)
+            ->load(['pesanan.detailPesanan.menu', 'pembayaran']);
 
-        return view(
-            'customer.checkout',
-            compact('reservasi')
-        );
+        return view('customer.checkout', compact('reservasi'));
     }
 
-    public function bayar(
-        Request $request,
-        $id
-    )
+    public function bayar(PayReservationRequest $request, int $id)
     {
-        $request->validate([
-            'metode' => 'required',
-            'bukti_bayar' => 'required|image'
-        ]);
+        $data = $request->validated();
 
-        $reservasi = Reservasi::findOrFail($id);
+        $reservasi = $this->findVisibleReservation($id)->load('pembayaran');
 
-        $bukti = $request
-            ->file('bukti_bayar')
-            ->store(
-                'bukti-pembayaran',
-                'public'
-            );
+        if ($reservasi->status !== 'menunggu_pembayaran' || $reservasi->pembayaran) {
+            return back()->with('error', 'Pembayaran untuk reservasi ini sudah diproses.');
+        }
 
-        Pembayaran::create([
-            'reservasi_id' => $reservasi->id,
-            'metode' => $request->metode,
-            'jumlah' => $reservasi->total_harga,
-            'bukti_bayar' => $bukti,
-            'status' => 'pending'
-        ]);
+        $bukti = $request->file('bukti_bayar')->store('bukti-pembayaran', 'public');
 
-        return redirect()->route('customer.reservasi.sukses', $reservasi->id);
+        DB::transaction(function () use ($reservasi, $data, $bukti) {
+            Pembayaran::create([
+                'reservasi_id' => $reservasi->id,
+                'metode' => $data['metode'],
+                'jumlah' => $reservasi->total_harga,
+                'bukti_bayar' => $bukti,
+                'status' => 'pending',
+            ]);
+        });
+
+        return redirect()->route('customer.reservasi.sukses', $reservasi);
     }
 
-    public function sukses($id)
+    public function sukses(int $id)
     {
-        $reservasi = Reservasi::findOrFail($id);
+        $reservasi = $this->findVisibleReservation($id);
 
-        return view(
-            'customer.reservasi-sukses',
-            compact('reservasi')
-        );
+        return view('customer.reservasi-sukses', compact('reservasi'));
     }
 
-    public function qrcode($id)
+    public function qrcode(int $id)
     {
-        $reservasi = Reservasi::findOrFail($id);
+        $reservasi = $this->findVisibleReservation($id);
 
-        return view(
-            'customer.qrcode',
-            compact('reservasi')
-        );
+        return view('customer.qrcode', compact('reservasi'));
+    }
+
+    public function batal(int $id)
+    {
+        $reservasi = $this->findVisibleReservation($id);
+
+        if ($reservasi->status === 'menunggu_pembayaran') {
+            $reservasi->update(['status' => 'dibatalkan']);
+            return redirect()->route('customer.reservasi.index')->with('success', 'Reservasi berhasil dibatalkan. Meja sekarang tersedia kembali.');
+        }
+
+        return back()->with('error', 'Reservasi tidak dapat dibatalkan.');
+    }
+
+    private function findVisibleReservation(int $id): Reservasi
+    {
+        return Reservasi::query()
+            ->when(auth()->check() && auth()->user()->role !== 'admin', fn ($query) => $query->where('user_id', auth()->id()))
+            ->findOrFail($id);
     }
 }

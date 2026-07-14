@@ -3,62 +3,44 @@
 namespace App\Http\Controllers\Customer;
 
 use App\Http\Controllers\Controller;
-use App\Models\Meja;
-use App\Models\Menu;
-use App\Models\Reservasi;
-use App\Models\Pesanan;
+use App\Http\Requests\ReservationAvailabilityRequest;
+use App\Http\Requests\StoreGuestReservationRequest;
+use App\Http\Requests\StoreReservationRequest;
 use App\Models\DetailPesanan;
 use App\Models\KategoriMenu;
-use Illuminate\Http\Request;
+use App\Models\Meja;
+use App\Models\Menu;
+use App\Models\Pesanan;
+use App\Models\Reservasi;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class ReservasiController extends Controller
 {
-    public function create()
+    public function index(ReservationAvailabilityRequest $request)
     {
-        $meja = Meja::where(
-            'status',
-            'tersedia'
-        )->get();
-
-        $menu = Menu::where(
-            'status',
-            'tersedia'
-        )->get();
-
-        return view(
-            'customer.reservasi',
-            compact(
-                'meja',
-                'menu'
-            )
-        );
-    }
-
-    /**
-     * Display the reservation form and handle availability checks.
-     */
-    public function index(Request $request)
-    {
-        $tanggal = $request->input('tanggal');
-        $jam_mulai = $request->input('jam_mulai');
-        $jam_selesai = $request->input('jam_selesai');
+        $data = $request->validated();
+        $tanggal = $data['tanggal'] ?? null;
+        $jam_mulai = $data['jam_mulai'] ?? null;
+        $jam_selesai = $data['jam_selesai'] ?? null;
 
         $mejas = collect();
         $message = '';
 
         if ($tanggal && $jam_mulai && $jam_selesai) {
-            // Find meja IDs that are already booked for the given slot
-            $booked = Reservasi::where('tanggal', $tanggal)
+            $booked = Reservasi::query()
+                ->where('tanggal', $tanggal)
                 ->whereIn('status', ['menunggu_pembayaran', 'dibayar'])
-                ->where(function ($query) use ($jam_mulai, $jam_selesai) {
-                    $query->whereBetween('jam_mulai', [$jam_mulai, $jam_selesai])
-                        ->orWhereBetween('jam_selesai', [$jam_mulai, $jam_selesai]);
-                })
-                ->pluck('meja_id')
-                ->toArray();
+                ->where('jam_mulai', '<', $jam_selesai)
+                ->where('jam_selesai', '>', $jam_mulai)
+                ->pluck('meja_id');
 
-            $mejas = Meja::where('status', 'tersedia')
+            $mejas = Meja::query()
+                ->where('status', 'tersedia')
                 ->whereNotIn('id', $booked)
+                ->orderBy('nomor_meja')
                 ->get();
 
             if ($mejas->isEmpty()) {
@@ -66,171 +48,136 @@ class ReservasiController extends Controller
             }
         }
 
-        $categories = KategoriMenu::with(['menu' => function ($q) {
-            $q->where('status', 'tersedia');
-        }])->get();
+        $categories = KategoriMenu::query()
+            ->with(['menu' => fn ($query) => $query->where('status', 'tersedia')->orderBy('nama_menu')])
+            ->orderBy('nama_kategori')
+            ->get();
 
         return view('customer.reservasi', compact('mejas', 'categories', 'tanggal', 'jam_mulai', 'jam_selesai', 'message'));
     }
 
-    public function store(Request $request)
+    public function store(StoreReservationRequest $request)
     {
-        $totalQty = array_sum($request->qty);
+        $reservasi = $this->createReservation($request->validated(), auth()->id());
 
-        if ($totalQty <= 0) {
-            return back()->with('error', 'Minimal pesan 1 menu');
-        }
-
-        $cekBentrok = Reservasi::where('meja_id', $request->meja_id)
-            ->where('tanggal', $request->tanggal)
-            ->whereIn('status', [
-                'menunggu_pembayaran',
-                'dibayar',
-            ])
-            ->where(function ($query) use ($request) {
-                $query->whereBetween('jam_mulai', [
-                    $request->jam_mulai,
-                    $request->jam_selesai,
-                ])
-                ->orWhereBetween('jam_selesai', [
-                    $request->jam_mulai,
-                    $request->jam_selesai,
-                ]);
-            })
-            ->exists();
-
-        if ($cekBentrok) {
-            return back()->with('error', 'Maaf, Meja sudah dipesan pada jam tersebut');
-        }
-
-        $kode = 'RSV-' . time();
-
-        $reservasi = Reservasi::create([
-            'user_id' => auth()->id(),
-            'meja_id' => $request->meja_id,
-            'kode_reservasi' => $kode,
-            'tanggal' => $request->tanggal,
-            'jam_mulai' => $request->jam_mulai,
-            'jam_selesai' => $request->jam_selesai,
-            'status' => 'menunggu_pembayaran',
-        ]);
-
-        $pesanan = Pesanan::create([
-            'reservasi_id' => $reservasi->id,
-            'total' => 0,
-        ]);
-
-        $total = 0;
-
-        foreach ($request->qty as $menu_id => $qty) {
-            if ($qty > 0) {
-                $menu = Menu::find($menu_id);
-
-                $subtotal = $menu->harga * $qty;
-
-                DetailPesanan::create([
-                    'pesanan_id' => $pesanan->id,
-                    'menu_id' => $menu_id,
-                    'qty' => $qty,
-                    'harga' => $menu->harga,
-                    'subtotal' => $subtotal,
-                ]);
-
-                $total += $subtotal;
-            }
-        }
-
-        $pesanan->update(['total' => $total]);
-
-        $reservasi->update(['total_harga' => $total]);
-
-        return redirect()->route('customer.checkout.index', $reservasi->id);
+        return redirect()->route('customer.checkout.index', $reservasi);
     }
 
-    /**
-     * Store a reservation submitted by a guest (not authenticated).
-     */
-    public function storeGuest(Request $request)
+    public function storeGuest(StoreGuestReservationRequest $request)
     {
-        $rules = [
-            'meja_id' => 'required|exists:mejas,id',
-            'tanggal' => 'required|date',
-            'jam_mulai' => 'required',
-            'jam_selesai' => 'required',
-            'qty' => 'required|array',
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255',
-        ];
+        $data = $request->validated();
 
-        $data = $request->validate($rules);
-
-        $totalQty = array_sum($request->qty ?? []);
-
-        if ($totalQty <= 0) {
-            return back()->with('error', 'Minimal pesan 1 menu');
-        }
-
-        $cekBentrok = Reservasi::where('meja_id', $request->meja_id)
-            ->where('tanggal', $request->tanggal)
-            ->whereIn('status', ['menunggu_pembayaran', 'dibayar'])
-            ->where(function ($query) use ($request) {
-                $query->whereBetween('jam_mulai', [$request->jam_mulai, $request->jam_selesai])
-                    ->orWhereBetween('jam_selesai', [$request->jam_mulai, $request->jam_selesai]);
-            })->exists();
-
-        if ($cekBentrok) {
-            return back()->with('error', 'Maaf, Meja sudah dipesan pada jam tersebut');
-        }
-
-        $kode = 'RSV-' . time();
-
-        $reservasi = Reservasi::create([
-            'user_id' => null,
-            'guest_name' => $request->name,
-            'guest_email' => $request->email,
-            'meja_id' => $request->meja_id,
-            'kode_reservasi' => $kode,
-            'tanggal' => $request->tanggal,
-            'jam_mulai' => $request->jam_mulai,
-            'jam_selesai' => $request->jam_selesai,
-            'status' => 'menunggu_pembayaran',
+        $reservasi = $this->createReservation($data, null, [
+            'guest_name' => $data['name'],
+            'guest_email' => $data['email'],
         ]);
 
-        $pesanan = Pesanan::create(['reservasi_id' => $reservasi->id, 'total' => 0]);
-
-        $total = 0;
-        foreach ($request->qty as $menu_id => $qty) {
-            if ($qty > 0) {
-                $menu = Menu::find($menu_id);
-                $subtotal = $menu->harga * $qty;
-                DetailPesanan::create([
-                    'pesanan_id' => $pesanan->id,
-                    'menu_id' => $menu_id,
-                    'qty' => $qty,
-                    'harga' => $menu->harga,
-                    'subtotal' => $subtotal,
-                ]);
-                $total += $subtotal;
-            }
-        }
-
-        $pesanan->update(['total' => $total]);
-        $reservasi->update(['total_harga' => $total]);
-
-        return redirect()->route('customer.checkout.index', $reservasi->id);
+        return redirect()->route('customer.checkout.index', $reservasi);
     }
 
-    /**
-     * Show a success page for a reservation if view exists, otherwise redirect to checkout.
-     */
-    public function sukses($id)
+    public function sukses(int $id)
     {
-        $reservasi = Reservasi::with('pesanan.detailPesanan.menu')->find($id);
+        $reservasi = $this->findVisibleReservation($id)->load('pesanan.detailPesanan.menu');
 
         if (view()->exists('customer.reservasi-sukses')) {
             return view('customer.reservasi-sukses', compact('reservasi'));
         }
 
-        return redirect()->route('customer.checkout.index', $id);
+        return redirect()->route('customer.checkout.index', $reservasi);
+    }
+
+    private function createReservation(array $data, ?int $userId, array $guestData = []): Reservasi
+    {
+        $selectedQty = collect($data['qty'] ?? [])
+            ->map(fn ($qty) => (int) $qty)
+            ->filter(fn ($qty) => $qty > 0);
+
+        if ($selectedQty->isEmpty()) {
+            throw ValidationException::withMessages(['qty' => 'Minimal pesan 1 menu']);
+        }
+
+        return DB::transaction(function () use ($data, $userId, $guestData, $selectedQty) {
+            // 1. Lock Meja (Parent Resource) to prevent Phantom Read concurrency issue
+            $meja = Meja::where('id', $data['meja_id'])
+                        ->where('status', 'tersedia')
+                        ->lockForUpdate()
+                        ->first();
+
+            if (!$meja) {
+                throw ValidationException::withMessages(['meja_id' => 'Meja tidak ditemukan atau sedang tidak tersedia']);
+            }
+
+            // 2. Check for overlapping reservation
+            $isBooked = Reservasi::query()
+                ->where('meja_id', $meja->id)
+                ->where('tanggal', $data['tanggal'])
+                ->whereIn('status', ['menunggu_pembayaran', 'dibayar'])
+                ->where('jam_mulai', '<', $data['jam_selesai'])
+                ->where('jam_selesai', '>', $data['jam_mulai'])
+                ->exists();
+
+            if ($isBooked) {
+                throw ValidationException::withMessages(['meja_id' => 'Maaf, Meja sudah dipesan pada jam tersebut']);
+            }
+
+            $menus = Menu::query()
+                ->whereIn('id', $selectedQty->keys())
+                ->where('status', 'tersedia')
+                ->get()
+                ->keyBy('id');
+
+            if ($menus->count() !== $selectedQty->count()) {
+                throw ValidationException::withMessages(['qty' => 'Menu yang dipilih tidak valid atau sudah tidak tersedia']);
+            }
+
+            $reservasi = Reservasi::create(array_merge($guestData, [
+                'user_id' => $userId,
+                'meja_id' => $data['meja_id'],
+                'kode_reservasi' => 'RSV-'.Str::upper(Str::random(12)),
+                'tanggal' => $data['tanggal'],
+                'jam_mulai' => $data['jam_mulai'],
+                'jam_selesai' => $data['jam_selesai'],
+                'status' => 'menunggu_pembayaran',
+            ]));
+
+            $pesanan = Pesanan::create([
+                'reservasi_id' => $reservasi->id,
+                'total' => 0,
+            ]);
+
+            $details = $this->buildOrderDetails($selectedQty, $menus, $pesanan->id);
+            DetailPesanan::insert($details->values()->all());
+
+            $total = $details->sum('subtotal');
+            $pesanan->update(['total' => $total]);
+            $reservasi->update(['total_harga' => $total]);
+
+            return $reservasi;
+        });
+    }
+
+    private function buildOrderDetails(Collection $selectedQty, Collection $menus, int $pesananId): Collection
+    {
+        return $selectedQty->map(function (int $qty, int|string $menuId) use ($menus, $pesananId) {
+            $menu = $menus->get((int) $menuId);
+            $subtotal = $menu->harga * $qty;
+
+            return [
+                'pesanan_id' => $pesananId,
+                'menu_id' => $menu->id,
+                'qty' => $qty,
+                'harga' => $menu->harga,
+                'subtotal' => $subtotal,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+        });
+    }
+
+    private function findVisibleReservation(int $id): Reservasi
+    {
+        return Reservasi::query()
+            ->when(auth()->check() && auth()->user()->role !== 'admin', fn ($query) => $query->where('user_id', auth()->id()))
+            ->findOrFail($id);
     }
 }

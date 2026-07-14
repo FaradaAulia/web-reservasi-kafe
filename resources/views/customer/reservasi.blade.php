@@ -9,7 +9,7 @@
     </div>
 
     <!-- Form Jadwal & Cek Ketersediaan -->
-    <div class="bg-stone-900 rounded-3xl border border-stone-850 p-6 shadow-xl">
+    <div class="bg-stone-900 rounded-3xl border border-stone-800 p-6 shadow-xl">
         <h3 class="text-lg font-bold text-stone-200 mb-4 flex items-center gap-2">
             <i class="bi bi-clock-history text-amber-500"></i> 1. Tentukan Jadwal Reservasi
         </h3>
@@ -62,7 +62,7 @@
             <input type="hidden" name="jam_selesai" value="{{ $jam_selesai }}">
 
             <!-- Section 2: Pilih Meja -->
-            <div class="bg-stone-900 rounded-3xl border border-stone-850 p-6 shadow-xl">
+            <div class="bg-stone-900 rounded-3xl border border-stone-800 p-6 shadow-xl">
                 <h3 class="text-lg font-bold text-stone-200 mb-2 flex items-center gap-2">
                     <i class="bi bi-grid-3x3-gap text-amber-500"></i> 2. Pilih Meja Kafe
                 </h3>
@@ -88,7 +88,7 @@
                         @endforeach
                     </div>
                 @else
-                    <div class="bg-stone-950/50 border border-stone-850 p-6 rounded-2xl text-center text-stone-500 text-sm">
+                    <div class="bg-stone-950/50 border border-stone-800 p-6 rounded-2xl text-center text-stone-500 text-sm">
                         Silakan pilih jadwal lain untuk mencari meja yang kosong.
                     </div>
                 @endif
@@ -96,7 +96,7 @@
 
             <!-- Section 3: Pemesanan Menu Makanan & Minuman -->
             @if(!$mejas->isEmpty())
-                <div class="bg-stone-900 rounded-3xl border border-stone-850 p-6 shadow-xl">
+                <div class="bg-stone-900 rounded-3xl border border-stone-800 p-6 shadow-xl">
                     <h3 class="text-lg font-bold text-stone-200 mb-2 flex items-center gap-2">
                         <i class="bi bi-journal-richtext text-amber-500"></i> 3. Tambahkan Makanan & Minuman (Wajib)
                     </h3>
@@ -106,11 +106,11 @@
                         @foreach($categories as $category)
                             @if(!$category->menu->isEmpty())
                                 <div>
-                                    <h4 class="text-sm font-semibold uppercase tracking-wider text-amber-500 border-b border-stone-850 pb-2 mb-4">{{ $category->nama_kategori }}</h4>
+                                    <h4 class="text-sm font-semibold uppercase tracking-wider text-amber-500 border-b border-stone-800 pb-2 mb-4">{{ $category->nama_kategori }}</h4>
                                     
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         @foreach($category->menu as $menu)
-                                            <div class="bg-stone-950 border border-stone-850 hover:border-stone-800 p-4 rounded-2xl flex items-center gap-4 transition">
+                                            <div class="bg-stone-950 border border-stone-800 hover:border-stone-700 p-4 rounded-2xl flex items-center gap-4 transition">
                                                 
                                                 <!-- Image -->
                                                 <div class="shrink-0">

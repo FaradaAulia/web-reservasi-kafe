@@ -49,32 +49,21 @@
                                     <tr>
                                         <td>{{ $index + 1 }}</td>
                                         <td><span class="font-weight-600 text-dark">{{ $pay->reservasi->kode_reservasi }}</span></td>
-                                        <td>{{ $pay->reservasi->user->name }}</td>
+                                        <td>{{ $pay->reservasi->user?->name ?? $pay->reservasi->guest_name ?? 'Guest' }}</td>
                                         <td><span class="badge bg-secondary-subtle text-secondary">{{ strtoupper($pay->metode) }}</span></td>
                                         <td><span class="font-weight-600 text-dark">Rp {{ number_format($pay->jumlah, 0, ',', '.') }}</span></td>
                                         <td>
                                             @if($pay->bukti_bayar)
-                                                <button type="button" class="btn btn-sm btn-outline-info btn-custom py-1 px-2" data-bs-toggle="modal" data-bs-target="#receiptModal-{{ $pay->id }}">
+                                                <button
+                                                    type="button"
+                                                    class="btn btn-sm btn-outline-info btn-custom py-1 px-2 js-show-receipt"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#receiptModal"
+                                                    data-receipt-src="{{ asset('storage/'.$pay->bukti_bayar) }}"
+                                                    data-receipt-code="{{ $pay->reservasi->kode_reservasi }}"
+                                                >
                                                     <i class="bi bi-eye-fill me-1"></i> Lihat Bukti
                                                 </button>
-
-                                                <!-- Modal Bukti Bayar -->
-                                                <div class="modal fade" id="receiptModal-{{ $pay->id }}" tabindex="-1" aria-labelledby="receiptModalLabel" aria-hidden="true">
-                                                    <div class="modal-dialog modal-dialog-centered">
-                                                        <div class="modal-content card-custom">
-                                                            <div class="modal-header">
-                                                                <h6 class="modal-title font-weight-600">Bukti Transfer - {{ $pay->reservasi->kode_reservasi }}</h6>
-                                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                            </div>
-                                                            <div class="modal-body text-center bg-light receipt-modal-body">
-                                                                <img src="{{ asset('storage/'.$pay->bukti_bayar) }}" alt="Bukti Transfer" class="img-fluid rounded receipt-image">
-                                                            </div>
-                                                            <div class="modal-footer">
-                                                                <button type="button" class="btn btn-secondary btn-custom" data-bs-dismiss="modal">Tutup</button>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
                                             @else
                                                 <span class="text-muted small">Belum diunggah</span>
                                             @endif
@@ -135,7 +124,7 @@
                                 @forelse($reservasiList as $res)
                                     <tr>
                                         <td><span class="font-weight-600 text-dark">{{ $res->kode_reservasi }}</span></td>
-                                        <td>{{ $res->user->name }}</td>
+                                        <td>{{ $res->user?->name ?? $res->guest_name ?? 'Guest' }}</td>
                                         <td>{{ $res->meja->nomor_meja }} <small class="text-muted">(Cap: {{ $res->meja->kapasitas }})</small></td>
                                         <td>
                                             <div>{{ \Carbon\Carbon::parse($res->tanggal)->format('d M Y') }}</div>
@@ -199,4 +188,53 @@
         </div>
     </div>
 </div>
+
+<!-- Modal Bukti Bayar -->
+<div class="modal fade" id="receiptModal" tabindex="-1" aria-labelledby="receiptModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content card-custom">
+            <div class="modal-header">
+                <h6 class="modal-title font-weight-600" id="receiptModalLabel">Bukti Pembayaran</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+            </div>
+            <div class="modal-body text-center bg-light receipt-modal-body">
+                <img id="receiptModalImage" src="" alt="Bukti Pembayaran" class="img-fluid rounded receipt-image">
+            </div>
+            <div class="modal-footer">
+                <a id="receiptModalOpen" href="#" target="_blank" rel="noopener" class="btn btn-outline-primary btn-custom">
+                    <i class="bi bi-box-arrow-up-right me-1"></i> Buka Gambar
+                </a>
+                <button type="button" class="btn btn-secondary btn-custom" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const receiptModal = document.getElementById('receiptModal');
+        const receiptTitle = document.getElementById('receiptModalLabel');
+        const receiptImage = document.getElementById('receiptModalImage');
+        const receiptOpen = document.getElementById('receiptModalOpen');
+
+        document.querySelectorAll('.js-show-receipt').forEach((button) => {
+            button.addEventListener('click', function () {
+                const imageSrc = this.dataset.receiptSrc;
+                const reservationCode = this.dataset.receiptCode;
+
+                receiptTitle.textContent = `Bukti Pembayaran - ${reservationCode}`;
+                receiptImage.src = imageSrc;
+                receiptOpen.href = imageSrc;
+            });
+        });
+
+        receiptModal.addEventListener('hidden.bs.modal', function () {
+            receiptImage.src = '';
+            receiptOpen.href = '#';
+            receiptTitle.textContent = 'Bukti Pembayaran';
+        });
+    });
+</script>
+@endpush

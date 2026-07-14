@@ -65,6 +65,7 @@ Route::middleware('auth')
         // Checkout & Payment Receipt Upload
         Route::get('/checkout/{id}', [CustomerCheckoutController::class, 'index'])->name('customer.checkout.index');
         Route::post('/checkout/{id}/bayar', [CustomerCheckoutController::class, 'bayar'])->name('customer.checkout.bayar');
+        Route::post('/checkout/{id}/batal', [CustomerCheckoutController::class, 'batal'])->name('customer.checkout.batal');
         Route::get('/checkout/{id}/qrcode', [CustomerCheckoutController::class, 'qrcode'])->name('customer.checkout.qrcode');
     });
 

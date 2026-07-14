@@ -2,7 +2,6 @@
 
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 
@@ -16,7 +15,7 @@ state([
     'name' => '',
     'email' => '',
     'password' => '',
-    'password_confirmation' => ''
+    'password_confirmation' => '',
 ]);
 
 rules([
@@ -31,17 +30,17 @@ $register = function () {
     $validated['password'] = Hash::make($validated['password']);
     $validated['role'] = 'pelanggan';
 
-    event(new Registered($user = User::create($validated)));
+    event(new Registered(User::create($validated)));
 
-    Auth::login($user);
+    session()->flash('status', 'Akun berhasil dibuat. Silakan login.');
 
-    $this->redirect(route('customer.home', absolute: false), navigate: true);
+    $this->redirectRoute('login');
 };
 
 ?>
 
 <div>
-    <form wire:submit="register">
+    <form wire:submit.prevent="register" method="POST">
         <!-- Name -->
         <div>
             <x-input-label for="name" :value="__('Name')" />

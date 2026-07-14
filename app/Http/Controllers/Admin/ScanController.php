@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\ScanReservationRequest;
 use App\Models\Reservasi;
-use Illuminate\Http\Request;
 
 class ScanController extends Controller
 {
@@ -13,12 +13,11 @@ class ScanController extends Controller
         return view('admin.scan');
     }
 
-    public function check(Request $request)
+    public function check(ScanReservationRequest $request)
     {
-        $reservasi = Reservasi::where(
-            'kode_reservasi',
-            $request->kode
-        )->first();
+        $reservasi = Reservasi::with(['user', 'meja', 'pesanan.detailPesanan.menu', 'pembayaran'])
+            ->where('kode_reservasi', $request->validated('kode'))
+            ->first();
 
         return view(
             'admin.scan',

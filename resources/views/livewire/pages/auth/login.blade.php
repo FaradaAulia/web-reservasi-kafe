@@ -22,7 +22,7 @@ $login = function () {
         ? route('admin.dashboard', absolute: false)
         : route('customer.home', absolute: false);
 
-    $this->redirect($destination, navigate: true);
+    $this->redirect($destination);
 };
 
 ?>

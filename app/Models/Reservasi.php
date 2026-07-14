@@ -12,11 +12,13 @@ class Reservasi extends Model
         'user_id',
         'meja_id',
         'kode_reservasi',
+        'guest_name',
+        'guest_email',
         'tanggal',
         'jam_mulai',
         'jam_selesai',
         'total_harga',
-        'status'
+        'status',
     ];
 
     public function user()
