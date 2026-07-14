@@ -107,5 +107,10 @@
         </div>
     </footer>
 
+    <!-- Floating WhatsApp Button -->
+    <a href="https://wa.me/6282360535593?text=Halo%20Admin%20Aroma%20Kafe,%20saya%20butuh%20bantuan%20terkait%20reservasi." target="_blank" class="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-green-500 text-white shadow-lg shadow-green-500/30 transition-transform hover:scale-110 hover:bg-green-400">
+        <i class="bi bi-whatsapp text-2xl"></i>
+    </a>
+
 </body>
 </html>

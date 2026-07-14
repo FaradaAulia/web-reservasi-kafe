@@ -8,6 +8,15 @@
         <p class="text-stone-400 text-sm mt-1">Isi detail jadwal, pilih meja, dan pilih menu makanan & minuman Anda.</p>
     </div>
 
+    <!-- Info alert rombongan -->
+    <div class="bg-blue-950/40 border border-blue-500/30 rounded-2xl p-4 flex gap-4 items-start shadow-lg">
+        <i class="bi bi-info-circle-fill text-blue-400 text-xl mt-0.5"></i>
+        <div>
+            <h4 class="font-semibold text-blue-300">Reservasi Rombongan (> 10 Orang)?</h4>
+            <p class="text-sm text-stone-400 mt-1">Sistem ini membatasi pilihan meja reguler. Jika Anda ingin mereservasi untuk acara besar atau rombongan lebih dari 10 orang, silakan <a href="https://wa.me/6282360535593?text=Halo%20Admin%20Aroma%20Kafe,%20saya%20ingin%20reservasi%20untuk%20rombongan." target="_blank" class="text-amber-500 underline hover:text-amber-400 font-semibold transition">hubungi Admin via WhatsApp</a> untuk pengaturan khusus.</p>
+        </div>
+    </div>
+
     <!-- Form Jadwal & Cek Ketersediaan -->
     <div class="bg-stone-900 rounded-3xl border border-stone-800 p-6 shadow-xl">
         <h3 class="text-lg font-bold text-stone-200 mb-4 flex items-center gap-2">

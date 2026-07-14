@@ -12,6 +12,7 @@ Route::middleware('guest')->group(function () {
     Volt::route('login', 'pages.auth.login')
         ->name('login');
 
+    Route::post('register', [\App\Http\Controllers\Auth\RegisteredUserController::class, 'store']);
     Route::post('login', [AuthenticatedSessionController::class, 'store']);
 
     Volt::route('forgot-password', 'pages.auth.forgot-password')

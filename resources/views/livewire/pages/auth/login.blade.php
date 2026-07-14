@@ -27,56 +27,60 @@ $login = function () {
 
 ?>
 
-<div>
+<div class="space-y-6">
+    <div class="text-center mb-8">
+        <h2 class="text-2xl font-bold text-white tracking-wide">Selamat Datang Kembali</h2>
+        <p class="text-stone-400 text-sm mt-2">Silakan masuk ke akun Anda untuk melanjutkan reservasi.</p>
+    </div>
+
     <!-- Session Status -->
     <x-auth-session-status class="mb-4" :status="session('status')" />
 
-    <form wire:submit.prevent="login">
+    <form wire:submit.prevent="login" class="space-y-5">
         <!-- Email Address -->
         <div>
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input wire:model="form.email" id="email" class="block mt-1 w-full" type="email" name="email" required autofocus autocomplete="username" />
-            <x-input-error :messages="$errors->get('form.email')" class="mt-2" />
+            <label for="email" class="block text-xs font-semibold uppercase tracking-wider text-stone-400 mb-2">{{ __('Email') }}</label>
+            <input wire:model="form.email" id="email" type="email" name="email" required autofocus autocomplete="username" 
+                class="w-full bg-stone-950 border border-stone-800 rounded-xl px-4 py-3 text-stone-200 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 text-sm transition placeholder:text-stone-600" placeholder="nama@email.com">
+            <x-input-error :messages="$errors->get('form.email')" class="mt-2 text-rose-400 text-sm" />
         </div>
 
         <!-- Password -->
-        <div class="mt-4">
-            <x-input-label for="password" :value="__('Password')" />
-
-            <x-text-input wire:model="form.password" id="password" class="block mt-1 w-full"
-                            type="password"
-                            name="password"
-                            required autocomplete="current-password" />
-
-            <x-input-error :messages="$errors->get('form.password')" class="mt-2" />
+        <div>
+            <label for="password" class="block text-xs font-semibold uppercase tracking-wider text-stone-400 mb-2">{{ __('Password') }}</label>
+            <input wire:model="form.password" id="password" type="password" name="password" required autocomplete="current-password" 
+                class="w-full bg-stone-950 border border-stone-800 rounded-xl px-4 py-3 text-stone-200 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 text-sm transition placeholder:text-stone-600" placeholder="••••••••">
+            <x-input-error :messages="$errors->get('form.password')" class="mt-2 text-rose-400 text-sm" />
         </div>
 
-        <!-- Remember Me -->
-        <div class="block mt-4">
-            <label for="remember" class="inline-flex items-center">
-                <input wire:model="form.remember" id="remember" type="checkbox" class="rounded dark:bg-gray-900 border-gray-300 dark:border-gray-700 text-indigo-600 shadow-sm focus:ring-indigo-500 dark:focus:ring-indigo-600 dark:focus:ring-offset-gray-800" name="remember">
-                <span class="ms-2 text-sm text-gray-600 dark:text-gray-400">{{ __('Remember me') }}</span>
+        <!-- Remember Me & Forgot Password -->
+        <div class="flex items-center justify-between mt-2">
+            <label for="remember" class="inline-flex items-center cursor-pointer group">
+                <input wire:model="form.remember" id="remember" type="checkbox" name="remember" 
+                    class="rounded bg-stone-950 border-stone-700 text-amber-500 shadow-sm focus:ring-amber-500/50 cursor-pointer">
+                <span class="ms-2 text-sm text-stone-400 group-hover:text-stone-300 transition">{{ __('Ingat saya') }}</span>
             </label>
+
+            @if (Route::has('password.request'))
+                <a class="text-sm text-amber-500 hover:text-amber-400 font-medium transition" href="{{ route('password.request') }}" wire:navigate>
+                    {{ __('Lupa password?') }}
+                </a>
+            @endif
         </div>
 
-        <div class="flex flex-col gap-3 items-end mt-4">
-            <div class="flex items-center gap-3">
-                @if (Route::has('password.request'))
-                    <a class="underline text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800" href="{{ route('password.request') }}" wire:navigate>
-                        {{ __('lupa password?') }}
-                    </a>
-                @endif
-
-                @if (Route::has('register'))
-                    <a class="underline text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800" href="{{ route('register') }}" wire:navigate>
-                        {{ __('Buat Akun') }}
-                    </a>
-                @endif
-            </div>
-
-            <x-primary-button class="ms-3">
-                {{ __('Log in') }}
-            </x-primary-button>
+        <div class="pt-4">
+            <button type="submit" class="w-full inline-flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-500 text-stone-950 font-bold py-3.5 px-4 rounded-xl text-sm transition shadow-lg shadow-amber-900/20">
+                <i class="bi bi-box-arrow-in-right"></i> {{ __('Masuk') }}
+            </button>
         </div>
+        
+        @if (Route::has('register'))
+            <p class="text-center text-sm text-stone-400 mt-6">
+                Belum punya akun? 
+                <a class="text-amber-500 hover:text-amber-400 font-semibold transition" href="{{ route('register') }}" wire:navigate>
+                    {{ __('Daftar sekarang') }}
+                </a>
+            </p>
+        @endif
     </form>
 </div>
