@@ -27,6 +27,11 @@ class CafeSeeder extends Seeder
             'deskripsi' => 'Cemilan lezat peneman santai'
         ]);
 
+        $kategoriPaket = KategoriMenu::create([
+            'nama_kategori' => 'Paket',
+            'deskripsi' => 'Paket hemat makanan dan minuman'
+        ]);
+
         // 2. Seed Cafe Tables (Meja)
         $mejas = [
             ['nomor_meja' => 'Meja 01', 'kapasitas' => 2, 'status' => 'tersedia'],
@@ -35,8 +40,10 @@ class CafeSeeder extends Seeder
             ['nomor_meja' => 'Meja 04', 'kapasitas' => 4, 'status' => 'tersedia'],
             ['nomor_meja' => 'Meja 05', 'kapasitas' => 6, 'status' => 'tersedia'],
             ['nomor_meja' => 'Meja 06', 'kapasitas' => 6, 'status' => 'tersedia'],
-            ['nomor_meja' => 'Meja 07', 'kapasitas' => 8, 'status' => 'tersedia'],
-            ['nomor_meja' => 'Meja 08', 'kapasitas' => 8, 'status' => 'tersedia'],
+            ['nomor_meja' => 'Meja 07', 'kapasitas' => 8, 'status' => 'tersedia', 'tipe_meja' => 'reguler'],
+            ['nomor_meja' => 'Meja 08', 'kapasitas' => 8, 'status' => 'tersedia', 'tipe_meja' => 'reguler'],
+            ['nomor_meja' => 'Meeting Room A', 'kapasitas' => 15, 'status' => 'tersedia', 'tipe_meja' => 'meeting_room'],
+            ['nomor_meja' => 'Meeting Room B', 'kapasitas' => 20, 'status' => 'tersedia', 'tipe_meja' => 'meeting_room'],
         ];
 
         foreach ($mejas as $m) {
@@ -110,6 +117,22 @@ class CafeSeeder extends Seeder
             'nama_menu' => 'Cireng Rujak',
             'deskripsi' => 'Cireng goreng renyah kenyal disajikan dengan bumbu rujak pedas manis.',
             'harga' => 12000,
+            'status' => 'tersedia'
+        ]);
+
+        // Paket
+        Menu::create([
+            'kategori_id' => $kategoriPaket->id,
+            'nama_menu' => 'Paket Rame-rame',
+            'deskripsi' => '4 Nasi Goreng Spesial + 4 Teh Manis Dingin + 2 French Fries',
+            'harga' => 120000,
+            'status' => 'tersedia'
+        ]);
+        Menu::create([
+            'kategori_id' => $kategoriPaket->id,
+            'nama_menu' => 'Paket Berdua',
+            'deskripsi' => '2 Mie Goreng Jawa + 2 Es Kopi Susu Aren',
+            'harga' => 70000,
             'status' => 'tersedia'
         ]);
     }

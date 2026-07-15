@@ -11,7 +11,8 @@ class Meja extends Model
     protected $fillable = [
         'nomor_meja',
         'kapasitas',
-        'status'
+        'status',
+        'tipe_meja'
     ];
 
     public function reservasi()

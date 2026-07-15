@@ -20,6 +20,11 @@ return new class extends Migration
                 'dipesan'
             ])->default('tersedia');
 
+            $table->enum('tipe_meja', [
+                'reguler',
+                'meeting_room'
+            ])->default('reguler');
+
             $table->timestamps();
         });
     }

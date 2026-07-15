@@ -26,7 +26,8 @@ class ReservasiController extends Controller
         $jam_mulai = $data['jam_mulai'] ?? null;
         $jam_selesai = $data['jam_selesai'] ?? null;
 
-        $mejas = collect();
+        $mejaReguler = collect();
+        $mejaMeeting = collect();
         $message = '';
 
         if ($tanggal && $jam_mulai && $jam_selesai) {
@@ -37,13 +38,16 @@ class ReservasiController extends Controller
                 ->where('jam_selesai', '>', $jam_mulai)
                 ->pluck('meja_id');
 
-            $mejas = Meja::query()
+            $semuaMeja = Meja::query()
                 ->where('status', 'tersedia')
                 ->whereNotIn('id', $booked)
                 ->orderBy('nomor_meja')
                 ->get();
 
-            if ($mejas->isEmpty()) {
+            $mejaReguler = $semuaMeja->where('tipe_meja', 'reguler');
+            $mejaMeeting = $semuaMeja->where('tipe_meja', 'meeting_room');
+
+            if ($semuaMeja->isEmpty()) {
                 $message = 'Tidak ada meja tersedia pada jadwal tersebut.';
             }
         }
@@ -53,7 +57,28 @@ class ReservasiController extends Controller
             ->orderBy('nama_kategori')
             ->get();
 
-        return view('customer.reservasi', compact('mejas', 'categories', 'tanggal', 'jam_mulai', 'jam_selesai', 'message'));
+        // --- Algoritma Asosiasi (Apriori sederhana) ---
+        $associations = DB::table('detail_pesanan as a')
+            ->join('detail_pesanan as b', 'a.pesanan_id', '=', 'b.pesanan_id')
+            ->whereColumn('a.menu_id', '<', 'b.menu_id')
+            ->select('a.menu_id as menu1', 'b.menu_id as menu2', DB::raw('count(*) as count'))
+            ->groupBy('a.menu_id', 'b.menu_id')
+            ->get();
+
+        $recommendationMap = [];
+        foreach ($associations as $assoc) {
+            $recommendationMap[$assoc->menu1][] = ['id' => $assoc->menu2, 'count' => $assoc->count];
+            $recommendationMap[$assoc->menu2][] = ['id' => $assoc->menu1, 'count' => $assoc->count];
+        }
+
+        foreach ($recommendationMap as $menuId => &$recs) {
+            usort($recs, fn($a, $b) => $b['count'] <=> $a['count']);
+            $recs = collect($recs)->take(2)->pluck('id')->toArray();
+        }
+        $recommendationJson = json_encode($recommendationMap);
+        // ----------------------------------------------
+
+        return view('customer.reservasi', compact('mejaReguler', 'mejaMeeting', 'categories', 'tanggal', 'jam_mulai', 'jam_selesai', 'message', 'recommendationJson'));
     }
 
     public function store(StoreReservationRequest $request)

@@ -12,6 +12,29 @@ class StoreReservationRequest extends FormRequest
         return auth()->check();
     }
 
+    protected function prepareForValidation()
+    {
+        if ($this->has('meja_acak') && $this->meja_acak == '1') {
+            $booked = \App\Models\Reservasi::query()
+                ->where('tanggal', $this->tanggal)
+                ->whereIn('status', ['menunggu_pembayaran', 'dibayar'])
+                ->where('jam_mulai', '<', $this->jam_selesai)
+                ->where('jam_selesai', '>', $this->jam_mulai)
+                ->pluck('meja_id');
+
+            $randomMeja = \App\Models\Meja::query()
+                ->where('status', 'tersedia')
+                ->where('tipe_meja', 'reguler') // Default to reguler for random
+                ->whereNotIn('id', $booked)
+                ->inRandomOrder()
+                ->first();
+
+            if ($randomMeja) {
+                $this->merge(['meja_id' => $randomMeja->id]);
+            }
+        }
+    }
+
     public function rules(): array
     {
         return [

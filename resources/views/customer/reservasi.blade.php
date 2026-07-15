@@ -77,41 +77,89 @@
                 </h3>
                 <p class="text-xs text-stone-400 mb-6">{{ $message }}</p>
 
-                @if(!$mejas->isEmpty())
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                        @foreach($mejas as $meja)
-                            <label class="relative block cursor-pointer group">
-                                <input type="radio" name="meja_id" value="{{ $meja->id }}" class="peer sr-only" required>
-                                
-                                <div class="bg-stone-950 border border-stone-800 peer-checked:border-amber-500 peer-checked:bg-amber-950/20 rounded-2xl p-5 text-center transition group-hover:border-stone-700">
-                                    <i class="bi bi-table text-3xl text-stone-500 peer-checked:text-amber-500 group-hover:scale-105 transition block mb-2"></i>
-                                    <span class="block font-bold text-white text-base">{{ $meja->nomor_meja }}</span>
-                                    <span class="text-xs text-stone-400 mt-1 block">Kapasitas: {{ $meja->kapasitas }} Orang</span>
-                                </div>
-                                
-                                <!-- Indicator checkmark icon -->
-                                <div class="absolute top-2 right-2 opacity-0 peer-checked:opacity-100 transition">
-                                    <i class="bi bi-check-circle-fill text-amber-500 text-sm"></i>
-                                </div>
-                            </label>
-                        @endforeach
-                    </div>
-                @else
-                    <div class="bg-stone-950/50 border border-stone-800 p-6 rounded-2xl text-center text-stone-500 text-sm">
-                        Silakan pilih jadwal lain untuk mencari meja yang kosong.
-                    </div>
-                @endif
+                <!-- Checkbox Meja Acak -->
+                <div class="mb-6 p-4 border border-stone-700 bg-stone-950 rounded-xl">
+                    <label class="flex items-center gap-3 cursor-pointer">
+                        <input type="checkbox" name="meja_acak" value="1" id="meja_acak" class="w-5 h-5 text-amber-500 bg-stone-900 border-stone-700 rounded focus:ring-amber-500">
+                        <span class="text-sm font-bold text-stone-200">Pilihkan Saya Meja Secara Acak</span>
+                    </label>
+                    <p class="text-xs text-stone-500 mt-1 pl-8">Sistem akan otomatis mencarikan meja reguler yang tersedia untuk Anda.</p>
+                </div>
+
+                <div id="meja_selection_container">
+                    @if(!$mejaReguler->isEmpty() || !$mejaMeeting->isEmpty())
+                        
+                        @if(!$mejaReguler->isEmpty())
+                        <h4 class="text-sm font-semibold uppercase tracking-wider text-amber-500 border-b border-stone-800 pb-2 mb-4 mt-2">Meja Reguler</h4>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                            @foreach($mejaReguler as $meja)
+                                <label class="relative block cursor-pointer group">
+                                    <input type="radio" name="meja_id" value="{{ $meja->id }}" class="peer sr-only radio-meja" required>
+                                    
+                                    <div class="bg-stone-950 border border-stone-800 peer-checked:border-amber-500 peer-checked:bg-amber-950/20 rounded-2xl p-5 text-center transition group-hover:border-stone-700">
+                                        <i class="bi bi-table text-3xl text-stone-500 peer-checked:text-amber-500 group-hover:scale-105 transition block mb-2"></i>
+                                        <span class="block font-bold text-white text-base">{{ $meja->nomor_meja }}</span>
+                                        <span class="text-xs text-stone-400 mt-1 block">Kapasitas: {{ $meja->kapasitas }} Orang</span>
+                                    </div>
+                                    
+                                    <!-- Indicator checkmark icon -->
+                                    <div class="absolute top-2 right-2 opacity-0 peer-checked:opacity-100 transition">
+                                        <i class="bi bi-check-circle-fill text-amber-500 text-sm"></i>
+                                    </div>
+                                </label>
+                            @endforeach
+                        </div>
+                        @endif
+
+                        @if(!$mejaMeeting->isEmpty())
+                        <h4 class="text-sm font-semibold uppercase tracking-wider text-amber-500 border-b border-stone-800 pb-2 mb-4 mt-8">Meeting Room</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            @foreach($mejaMeeting as $meja)
+                                <label class="relative block cursor-pointer group">
+                                    <input type="radio" name="meja_id" value="{{ $meja->id }}" class="peer sr-only radio-meja" required>
+                                    
+                                    <div class="bg-stone-950 border border-stone-800 peer-checked:border-amber-500 peer-checked:bg-amber-950/20 rounded-2xl p-5 text-center transition group-hover:border-stone-700">
+                                        <i class="bi bi-door-open-fill text-3xl text-stone-500 peer-checked:text-amber-500 group-hover:scale-105 transition block mb-2"></i>
+                                        <span class="block font-bold text-white text-base">{{ $meja->nomor_meja }}</span>
+                                        <span class="text-xs text-stone-400 mt-1 block">Kapasitas: {{ $meja->kapasitas }} Orang</span>
+                                    </div>
+                                    
+                                    <!-- Indicator checkmark icon -->
+                                    <div class="absolute top-2 right-2 opacity-0 peer-checked:opacity-100 transition">
+                                        <i class="bi bi-check-circle-fill text-amber-500 text-sm"></i>
+                                    </div>
+                                </label>
+                            @endforeach
+                        </div>
+                        @endif
+
+                    @else
+                        <div class="bg-stone-950/50 border border-stone-800 p-6 rounded-2xl text-center text-stone-500 text-sm">
+                            Silakan pilih jadwal lain untuk mencari meja yang kosong.
+                        </div>
+                    @endif
+                </div>
             </div>
 
             <!-- Section 3: Pemesanan Menu Makanan & Minuman -->
-            @if(!$mejas->isEmpty())
+            @if(!$mejaReguler->isEmpty() || !$mejaMeeting->isEmpty())
                 <div class="bg-stone-900 rounded-3xl border border-stone-800 p-6 shadow-xl">
                     <h3 class="text-lg font-bold text-stone-200 mb-2 flex items-center gap-2">
                         <i class="bi bi-journal-richtext text-amber-500"></i> 3. Tambahkan Makanan & Minuman (Wajib)
                     </h3>
                     <p class="text-xs text-stone-400 mb-6">Pilih menu minimal 1 item. Anda wajib membayar lunas seluruh pesanan ini untuk menyelesaikan reservasi.</p>
 
-                    <div class="space-y-8">
+                    <!-- Tempat Rekomendasi Menu (Apriori) -->
+                    <div id="recommendation_container" class="hidden mb-8 p-4 bg-amber-950/20 border border-amber-900/50 rounded-2xl">
+                        <h4 class="text-sm font-bold text-amber-500 mb-3 flex items-center gap-2">
+                            <i class="bi bi-stars"></i> Rekomendasi Untuk Anda (Metode Asosiasi)
+                        </h4>
+                        <div id="recommendation_list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Injected by JS -->
+                        </div>
+                    </div>
+
+                    <div class="space-y-8" id="menu_catalog">
                         @foreach($categories as $category)
                             @if(!$category->menu->isEmpty())
                                 <div>
@@ -183,7 +231,31 @@
     document.addEventListener('DOMContentLoaded', function() {
         const qtyInputs = document.querySelectorAll('.input-qty');
         const totalPaymentDisplay = document.getElementById('totalPaymentDisplay');
+        const mejaAcakCheckbox = document.getElementById('meja_acak');
+        const mejaSelectionContainer = document.getElementById('meja_selection_container');
+        const radioMejas = document.querySelectorAll('.radio-meja');
         
+        // Data Rekomendasi (Apriori)
+        const recommendations = {!! $recommendationJson ?? '{}' !!};
+        const recommendationContainer = document.getElementById('recommendation_container');
+        const recommendationList = document.getElementById('recommendation_list');
+
+        // Toggle meja selection when 'Acak' is checked
+        if (mejaAcakCheckbox) {
+            mejaAcakCheckbox.addEventListener('change', function() {
+                if (this.checked) {
+                    mejaSelectionContainer.classList.add('opacity-50', 'pointer-events-none');
+                    radioMejas.forEach(radio => {
+                        radio.required = false;
+                        radio.checked = false;
+                    });
+                } else {
+                    mejaSelectionContainer.classList.remove('opacity-50', 'pointer-events-none');
+                    radioMejas.forEach(radio => radio.required = true);
+                }
+            });
+        }
+
         // Plus Quantity button click handler
         document.querySelectorAll('.btn-qty-plus').forEach(button => {
             button.addEventListener('click', function() {
@@ -192,6 +264,7 @@
                 let value = parseInt(input.value) || 0;
                 input.value = value + 1;
                 calculateTotal();
+                updateRecommendations();
             });
         });
 
@@ -204,9 +277,77 @@
                 if (value > 0) {
                     input.value = value - 1;
                     calculateTotal();
+                    updateRecommendations();
                 }
             });
         });
+
+        function updateRecommendations() {
+            // Find all selected menu IDs
+            const selectedMenuIds = [];
+            qtyInputs.forEach(input => {
+                if ((parseInt(input.value) || 0) > 0) {
+                    selectedMenuIds.push(input.id.replace('qty-', ''));
+                }
+            });
+
+            // Find recommended menu IDs based on selected ones
+            let recIds = new Set();
+            selectedMenuIds.forEach(id => {
+                if (recommendations[id]) {
+                    recommendations[id].forEach(recId => {
+                        // Don't recommend items already selected
+                        if (!selectedMenuIds.includes(String(recId))) {
+                            recIds.add(String(recId));
+                        }
+                    });
+                }
+            });
+
+            if (recIds.size > 0 && selectedMenuIds.length > 0) {
+                recommendationContainer.classList.remove('hidden');
+                recommendationList.innerHTML = '';
+                
+                recIds.forEach(id => {
+                    // Clone the element from the catalog
+                    const originalMenuDiv = document.getElementById(`qty-${id}`).closest('.bg-stone-950');
+                    if (originalMenuDiv) {
+                        const clone = originalMenuDiv.cloneNode(true);
+                        // Make inputs and buttons in clone point to the original
+                        const cloneMinus = clone.querySelector('.btn-qty-minus');
+                        const clonePlus = clone.querySelector('.btn-qty-plus');
+                        
+                        cloneMinus.onclick = function() {
+                            const originalInput = document.getElementById(`qty-${id}`);
+                            let value = parseInt(originalInput.value) || 0;
+                            if (value > 0) {
+                                originalInput.value = value - 1;
+                                clone.querySelector('input').value = value - 1;
+                                calculateTotal();
+                                updateRecommendations();
+                            }
+                        };
+                        clonePlus.onclick = function() {
+                            const originalInput = document.getElementById(`qty-${id}`);
+                            let value = parseInt(originalInput.value) || 0;
+                            originalInput.value = value + 1;
+                            clone.querySelector('input').value = value + 1;
+                            calculateTotal();
+                            updateRecommendations();
+                        };
+                        
+                        // Sync value
+                        const originalInput = document.getElementById(`qty-${id}`);
+                        clone.querySelector('input').value = originalInput.value;
+                        clone.querySelector('input').removeAttribute('id'); // prevent duplicate IDs
+                        
+                        recommendationList.appendChild(clone);
+                    }
+                });
+            } else {
+                recommendationContainer.classList.add('hidden');
+            }
+        }
 
         // Calculate total function
         function calculateTotal() {

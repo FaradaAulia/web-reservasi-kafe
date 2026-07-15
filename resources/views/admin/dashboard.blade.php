@@ -93,7 +93,7 @@
                         @forelse($reservasiTerbaru as $reservasi)
                             <tr>
                                 <td><span class="font-weight-600 text-dark">{{ $reservasi->kode_reservasi }}</span></td>
-                                <td>{{ $reservasi->user->name }}</td>
+                                <td>{{ $reservasi->user->name ?? $reservasi->guest_name }}</td>
                                 <td>
                                     <div>{{ \Carbon\Carbon::parse($reservasi->tanggal)->format('d M Y') }}</div>
                                     <small class="text-muted">{{ substr($reservasi->jam_mulai, 0, 5) }} - {{ substr($reservasi->jam_selesai, 0, 5) }}</small>
